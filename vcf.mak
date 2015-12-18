@@ -13,6 +13,7 @@ ifdef INOBJ
 all: groupGetGenotypes genePhaseRec geneTestRec geneVarAssoc groupVarAssoc geneVarAssocAll geneVarAssocSome showAltSubs SNPVarAssoc
 else
 all:
+	if [ ! -e ../obj ] ; then mkdir ../obj ; fi ; \
 	cd ../obj; \
 	make -f ../vcfcode/vcf.mak INOBJ=INOBJ ; \
 	cd ../vcfcode

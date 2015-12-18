@@ -1,6 +1,6 @@
 # Makefile for programs in vcf folder
 # the file makes its targets in ../obj
-# this means it and source files can live in ../src which will only be text files
+# this means it and source files can live in ../vcfcode which will only be text files
 
 C = gcc
 CC = g++
@@ -14,19 +14,19 @@ all: groupGetGenotypes genePhaseRec geneTestRec geneVarAssoc groupVarAssoc geneV
 else
 all:
 	cd ../obj; \
-	make -f ../src/vcf.mak INOBJ=INOBJ ; \
-	cd ../src
+	make -f ../vcfcode/vcf.mak INOBJ=INOBJ ; \
+	cd ../vcfcode
 endif
 
 clean:
 	rm *.o
 
-VPATH=../src
+VPATH=../vcfcode
 	
-%.o: ../src/%.cpp $(HEADERS)
+%.o: ../vcfcode/%.cpp $(HEADERS)
 	$(CC) $(OURFLAGS) -c $< -o ../obj/$@
 	
-%.o: ../src/%.c $(HEADERS)
+%.o: ../vcfcode/%.c $(HEADERS)
 	$(C) $(OURFLAGS) -c $< -o ../obj/$@
 
 groupGetGenotypes: groupGetGenotypes.o btree.o consequenceType.o dcerror.o dcindex.o geneVarUtils.o getGeneFuncs.o getSequenceFuncs.o intervalList.o vcfLocusFile.o vcfWriteVars.o masterLocusFile.o hapsLocusFile.o outputGenotypes.o 

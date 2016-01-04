@@ -7,17 +7,10 @@
 
 int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 {
-<<<<<<< HEAD
-	FILE *fp,*ef;
-	int argNum,i,s,usePhenotypes,f;
-	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
-	fp=NULL;
-=======
 	FILE *fp[MAXDEPTH],*ef;
 	int argNum,i,s,usePhenotypes,f,depth;
 	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
 	depth=-1;
->>>>>>> 0be6bd14a3b74140a24be86acabd2d43583a4282
 	argNum=1;
 	FILE *phenotypeFile;
 	*phenotypeFileName='\0';

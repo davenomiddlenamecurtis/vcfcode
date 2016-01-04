@@ -625,7 +625,7 @@ int refseqGeneInfo::tbiExtractGene(char *tbiFilename,char *outFn,int appendToOld
 				sprintf(strchr(geneLine,'\0'),"%s %s",appendToOld?">>":">",outFn);
 				printf("Running command: %s\n",geneLine);
 				systemStatus=system(geneLine);
-				printf("system returned %d\n",systemStatus);
+				// printf("system returned %d\n",systemStatus);
 				appendToOld=1;
 				sprintf(geneLine,"tabix %s ",tbiFn);
 				}
@@ -640,7 +640,7 @@ int refseqGeneInfo::tbiExtractGene(char *tbiFilename,char *outFn,int appendToOld
 		sprintf(strchr(geneLine,'\0'),"%s %s",appendToOld?">>":">",outFn);
 		printf("Running command: %s\n",geneLine);
 		systemStatus=system(geneLine);
-		printf("system returned %d\n",systemStatus);
+		// printf("system returned %d\n",systemStatus);
 		}
 	}
 	else
@@ -652,7 +652,7 @@ int refseqGeneInfo::tbiExtractGene(char *tbiFilename,char *outFn,int appendToOld
 	sprintf(strchr(geneLine,'\0'),"%s %s",appendToOld?">>":">",outFn);
 	printf("Running command: %s\n",geneLine);
 	systemStatus=system(geneLine);
-	printf("system returned %d\n",systemStatus);
+	// printf("system returned %d\n",systemStatus);
 	}
 	return 1;
 }

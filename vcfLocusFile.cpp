@@ -308,7 +308,7 @@ int vcfLocalLocus::input(FILE *f,FILEPOSITION *locusPosInFile,analysisSpecs cons
 		goto problemReadingLocus;
 	if (!scanWord(&ptr,ref,MAXALLLENGTH-1))
 		; // long allele, like a deletion, just use first MAXALLLENGTH
-	if (!scanWord(&ptr,alt,MAXALLLENGTH-1))
+	if (!scanWord(&ptr,alt,MAXALLLENGTH*MAXALL-1))
 		;
 	if (!scanWord(&ptr,qualstr,VCFFIELDLENGTH-1))
 		goto problemReadingLocus;

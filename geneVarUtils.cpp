@@ -9,10 +9,11 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 {
 	FILE *fp,*ef;
 	int argNum,i,s,usePhenotypes,f;
-	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1];
+	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
 	fp=NULL;
 	argNum=1;
 	FILE *phenotypeFile;
+	*phenotypeFileName='\0';
 	for (i=0;i<MAXVCFFILES;++i)
 		spec.addChrInVCF[i]=0;
 	if (spec.phenotypes!=NULL)
@@ -45,6 +46,8 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	spec.GQThreshold=0;
 	*referencePath=*sequencePath=*posName='\0';
 	spec.nExc=0;
+	dontExtractGene=0;
+	keepTempFiles=0;
 	for (i = 0; i < 2; ++i)
 	{
 		useFreqs[i] = 0; // default
@@ -71,15 +74,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		}
 		else if (FILLARG("--phenotype-file"))
 		{
-			spec.phenotypes=(int*)malloc(sizeof(int)*MAXSUB);
-			phenotypeFile=fopen(arg,"r");
-			if (phenotypeFile==NULL)
-				dcerror(1,"Could not open phenotype file: %s\n",arg);
-			nCc[0]=0;
-			for (s=0;fgets(line,1999,phenotypeFile) && sscanf(line,"%d",&spec.phenotypes[s])==1;++s)
-				;
-			fclose(phenotypeFile);
-			;
+			strcpy(phenotypeFileName,arg);
 		}
 		else if (FILLARG("--trio-file"))
 		{
@@ -151,6 +146,10 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 			spec.ignoreAlleles=atoi(arg);
 		else if (FILLARG("--use-haplotypes"))
 			spec.useHaplotypes=atoi(arg);
+		else if (FILLARG("--dont-extract-gene"))
+			dontExtractGene=atoi(arg);
+		else if (FILLARG("--keep-temp-files"))
+			keepTempFiles=atoi(arg);
 		else if (FILLARG("--reference-path"))
 			strcpy(referencePath, arg);
 		else if (FILLARG("--sequence-path"))
@@ -195,6 +194,18 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 			dcerror(1,"Unrecognised argument: %s\n",arg);
 			return 0;
 		}
+		;
+	}
+	if (phenotypeFileName[0])
+	{
+		spec.phenotypes = (int*)malloc(sizeof(int)*MAXSUB);
+		phenotypeFile = fopen(phenotypeFileName, "r");
+		if (phenotypeFile == NULL)
+			dcerror(1, "Could not open phenotype file: %s\n", phenotypeFileName);
+		nCc[0] = 0;
+		for (s = 0; fgets(line, 1999, phenotypeFile) && sscanf(line, "%d", &spec.phenotypes[s]) == 1; ++s)
+			;
+		fclose(phenotypeFile);
 		;
 	}
 	int len;

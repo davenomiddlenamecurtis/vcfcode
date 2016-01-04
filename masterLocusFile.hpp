@@ -1,14 +1,16 @@
 #ifndef masterLocusFileHPP
 #define masterLocusFileHPP
 
-#define MAXALL 40 // maximum number of alleles occurring at any locus
-#define MAXALLLENGTH 300
-//#define MAXALLLENGTH 300 // maximum length of the character string describing each REF allele 
+#define MAXALL 10 // maximum number of alleles occurring at any locus
+#define MAXALLLENGTH 100
+// #define MAXALLLENGTH 300 // maximum length of the character string describing each REF allele 
 // or all ALT alleles with commas separating them
 // 100 was too short
 // in theory one can have very long alleles in VCF files to describe chromosomal rearrangements
 // the code for scanWord means that only a truncated version will be input
 // but at present truncation causes an error
+// 30/12/15 I am increasing this to 1000 to see if this fixes a problem I have
+// when I do this I get a segmentation fault
 
 #define MAXVCFFILES 10
 #define MAXFILENAMELENGTH 60
@@ -117,7 +119,7 @@ protected:
 	consequenceType worstConsequenceType;
 	char masterID[VCFFIELDLENGTH];
 	char ref[MAXALLLENGTH];
-	char alt[MAXALLLENGTH];
+	char alt[MAXALLLENGTH*MAXALL];
 	int nAlls;
 	char alls[MAXALL][MAXALLLENGTH];
 	alleleMap *alleleMapping; // maps how allele in local file maps to global allele list for that locus
@@ -156,7 +158,7 @@ protected:
 	long pos;
 	char id[VCFFIELDLENGTH];
 	char ref[MAXALLLENGTH];
-	char alt[MAXALLLENGTH];
+	char alt[MAXALLLENGTH*MAXALLLENGTH];
 	char alls[MAXALL][MAXALLLENGTH];
 	float alleleFreq[MAXALL];
 	int nAltAlls; // number of alt alleles for which frequency is given
@@ -272,7 +274,7 @@ public:
 
 };
 
-bool scanWord(char **line,char *word,int maxLength);
+bool scanWord(char **line,char *word,int maxLength,char token='\0');
 
 
 #ifdef MSDOS

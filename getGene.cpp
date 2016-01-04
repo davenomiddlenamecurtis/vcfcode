@@ -1,4 +1,4 @@
-#include "getgene.hpp"
+#include "getGene.hpp"
 
 
 // getgene - download 1000 genomes entry for a gene

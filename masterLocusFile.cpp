@@ -212,32 +212,47 @@ int localLocus::write(FILE *fp)
 	return 1;
 }
 
-bool scanWord(char **line,char *word,int maxLength)
+bool scanWord(char **line, char *word, int maxLength, char token)
 // scan a string from a line with a maximum length for the string and end up pointing at the next one
 // if the string is too long, fill word with maxlength of it and point to the next word but return false
 {
 	char *ptr;
 	int i;
-	bool tooLong=false;
-	ptr=*line;
-	*word='\0';
-	while (isspace(*ptr))
-		++ptr;
+	bool tooLong = false;
+	ptr = *line;
+	*word = '\0';
+	if (token == '\0')
+		while (isspace(*ptr))
+			++ptr;
+	else
+		while (isspace(*ptr)||*ptr==token)
+			++ptr;
 	if (*ptr=='\0')
 		return 0;
 	for (i=0;i<maxLength;++i)
 	{
-		if (isspace(*ptr) || *ptr=='\0')
+		if (isspace(*ptr) || *ptr=='\0' || *ptr==token)
 			break;
 		*word++=*ptr++;
 	}
 	*word='\0';
-	if (*ptr && !isspace(*ptr))
+	if (*ptr && !isspace(*ptr) && *ptr!=token)
 		tooLong=true;
-	while (*ptr && !isspace(*ptr))
-		++ptr;
-	while (isspace(*ptr))
-		++ptr;
+	if (token == '\0')
+	{
+		while (*ptr && !isspace(*ptr))
+			++ptr;
+		while (isspace(*ptr))
+			++ptr;
+	}
+	else
+	{
+		while (*ptr && !isspace(*ptr) && *ptr!=token)
+			++ptr;
+		while (isspace(*ptr) || *ptr==token)
+			++ptr;
+	}
+
 	*line=ptr;
 	return !tooLong;
 }
@@ -703,12 +718,12 @@ if (recPos!=0L)
 #if 0
 		freqs[locusCount]=tempRecord.myLocalLocus[cc].eurAF;
 #else
-		if (!strcmp(tempRecord.myLocalLocus[cc]->filter,"UNTYPED") || (strcmp(tempRecord.myLocalLocus[cc]->filter,"PASS") && spec.unknownIfNoPass))
-			freqs[locusCount]=-1;
-		// I am not sure if this is right but at least I can break here
-		else
+		if (strcmp(tempRecord.myLocalLocus[cc]->filter,"UNTYPED"))
 			freqs[locusCount]=tempRecord.myLocalLocus[cc]->eurAF;
-		#endif
+		else
+			freqs[locusCount]=0;
+		// I am not sure if this is right but at least I can break here
+#endif
 		++locusCount;
 		recPos=index.get_next();
 		if (recPos==0L)
@@ -1146,7 +1161,7 @@ int masterLocusFile::readLocusFileEntries(char *fn,analysisSpecs const &spec,int
 	}
 	if (i==nLocusFiles)
 	{
-		dcerror(99,"Couldn't find entry for locus data file %s in master locus file",fn);
+		dcerror(99,"Couldn't find entry for locus data file %s in master locus file\n",fn);
 		return 0;
 	}
 #endif
@@ -1154,7 +1169,7 @@ int masterLocusFile::readLocusFileEntries(char *fn,analysisSpecs const &spec,int
 		fclose(locusFiles[currentLocusFile]->fp);
 	if ((locusFiles[currentLocusFile]->fp=fopen(fn,"rb"))==0)
 	{
-		dcerror(99,"Could not open locus data file %s",fn);
+		dcerror(99,"Could not open locus data file %s\n",fn);
 		return 0;
 	}
 	cc[currentLocusFile]=aff;
@@ -1275,7 +1290,7 @@ int masterLocusFile::openFiles(char *rfn,char *ifn)
 
 int masterLocusFile::fill(masterLocus &rec,localLocus *loc,FILEPOSITION locusPosInFile)
 {
-	char line[MAXALLLENGTH*2],rest[MAXALLLENGTH*2];
+	char line[MAXALLLENGTH*(MAXALL+1)+1],rest[MAXALLLENGTH*MAXALL+1],*ptr;
 	int i,a;
 	rec.PolyPhen[0]='\0';
 	rec.chr=loc->chr;
@@ -1299,18 +1314,20 @@ int masterLocusFile::fill(masterLocus &rec,localLocus *loc,FILEPOSITION locusPos
 		for (a = 0; a<MAXALL; ++a)
 			rec.alleleMapping[i][a] = -1;
 	}
-	for (rec.nAlls=0,rest[0]='\0';sscanf(line,"%[^,],%s",rec.alls[rec.nAlls],rest)>=1;++rec.nAlls)
+//	for (rec.nAlls=0,rest[0]='\0';sscanf(line,"%[^,],%s",rec.alls[rec.nAlls],rest)>=1;++rec.nAlls)
+	for (rec.nAlls=0,ptr=line;*ptr!='\0';++rec.nAlls)
 	{
 		if (rec.nAlls>MAXALL)
 		{
 			dcerror(4,"This variant has too many alleles (max %d): %s\n",MAXALL,line);
 			return 0;
 		}
+		scanWord(&ptr,rec.alls[rec.nAlls],MAXALLLENGTH-1,',');
 		if (strlen(rec.alls[rec.nAlls])>1)
 			rec.SNP=SNP_NO;
 		rec.alleleMapping[currentLocusFile][rec.nAlls]=rec.nAlls;
-		strcpy(line,rest);
-		rest[0]='\0';
+//		strcpy(line,rest);
+//		rest[0]='\0';
 	}
 	if (rec.nAlls>2)
 		rec.SNP=SNP_NO;
@@ -1650,7 +1667,7 @@ return recPos;
 int masterLocusFile::addLocus(FILE *f,analysisSpecs const &spec)
 {
 FILEPOSITION recPos,locusPosInFile,p;
-char key[1000];
+char key[MAXALLLENGTH*2+100],refTemp[MAXALLLENGTH+1],altTemp[MAXALLLENGTH+1],*ptr;
 const char *testKey;
 // locusPosInFile=FTELL(f); get this set by input() below
 if (!tempLocus->input(f,&locusPosInFile,spec))
@@ -1708,10 +1725,15 @@ else
 	index.add(key,recPos);
 }
 save(tempRecord,recPos);
+ptr=tempLocus->ref;
+scanWord(&ptr,refTemp,MAXALLLENGTH);
+ptr=tempLocus->alt;
+scanWord(&ptr,altTemp,MAXALLLENGTH);
 sprintf(key,"%s %3d %10ld %s %s",
-		lfFileNames[currentLocusFile],tempLocus->chr,tempLocus->pos,tempLocus->ref,tempLocus->alt);
+		lfFileNames[currentLocusFile],tempLocus->chr,tempLocus->pos,refTemp,altTemp);
 // now add a key to the same master record but specific for this file
 index.add(key,recPos);
+// in fact, BT_KSIZ is only 40 so it looks as if key will be truncated to that many characters
 return 1;
 }
 

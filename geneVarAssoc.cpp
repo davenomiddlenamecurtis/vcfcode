@@ -65,7 +65,9 @@ int main(int argc,char *argv[])
 		{
 			gcont.setVariantFileName(gp.ccFn[0][i]);
 			sprintf(fn,"gva.%s.cont.%d.vcf",geneName,i+1);
-			if (!gcont.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
+			if (gp.dontExtractGene)
+				printf("Will not attempt to produce %s because --dont-extract-gene was set",fn);
+			else if (!gcont.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
 				extractedOK=0;
 			vf.addLocusFile(fn,VCFFILE);
 			if (!vf.readLocusFileEntries(fn,spec,0))
@@ -75,7 +77,9 @@ int main(int argc,char *argv[])
 		{
 			gcase.setVariantFileName(gp.ccFn[1][i]);
 			sprintf(fn,"gva.%s.case.%d.vcf",geneName,i+1);
-			if (!gcase.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
+			if (gp.dontExtractGene)
+				printf("Will not attempt to produce %s because --dont-extract-gene was set",fn);
+			else if (!gcase.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
 				extractedOK=0;
 			vf.addLocusFile(fn,VCFFILE);
 			if (!vf.readLocusFileEntries(fn,spec,1))
@@ -115,6 +119,28 @@ int main(int argc,char *argv[])
 		fp=fopen(fn2,"w");
 		fprintf(fp,"Failed to extract variants for this gene\n");
 		fclose(fp);
+	}
+	if (!gp.keepTempFiles)
+	{
+		vf.closeFiles();
+		vf.closeLocusFiles();
+		if (!gp.dontExtractGene)
+		{
+			for (i = 0; i < gp.nCc[0]; ++i)
+			{
+				sprintf(fn, "gva.%s.cont.%d.vcf", geneName, i + 1);
+				unlink(fn);
+			}
+			for (i = 0; i < gp.nCc[1]; ++i)
+			{
+				sprintf(fn, "gva.%s.case.%d.vcf", geneName, i + 1);
+				unlink(fn);
+			}
+		}
+		sprintf(fn,"gva.%s.db",geneName);
+		sprintf(fn2,"gva.%s.vdx",geneName);
+		unlink(fn);
+		unlink(fn2);
 	}
 	return 0;
 }

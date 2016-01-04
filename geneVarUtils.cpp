@@ -3,14 +3,21 @@
 #define MAXSUB 10000
 
 #define isArgType(a) (a[0]=='-' && a[1]=='-')
-#define FILLARG(str) (strcmp(arg,str) ? 0 : ((getNextArg(arg, argc, argv, &fp, &argNum) && !isArgType(arg)) ? 1 : (dcerror(1,"No value provided for argument: %s\n",str), 0)))
+#define FILLARG(str) (strcmp(arg,str) ? 0 : ((getNextArg(arg, argc, argv, fp,&depth, &argNum) && !isArgType(arg)) ? 1 : (dcerror(1,"No value provided for argument: %s\n",str), 0)))
 
 int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 {
+<<<<<<< HEAD
 	FILE *fp,*ef;
 	int argNum,i,s,usePhenotypes,f;
 	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
 	fp=NULL;
+=======
+	FILE *fp[MAXDEPTH],*ef;
+	int argNum,i,s,usePhenotypes,f,depth;
+	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
+	depth=-1;
+>>>>>>> 0be6bd14a3b74140a24be86acabd2d43583a4282
 	argNum=1;
 	FILE *phenotypeFile;
 	*phenotypeFileName='\0';
@@ -54,7 +61,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		nCc[i]=0;
 		nSubs[i]=0;
 	}
-	while (getNextArg(arg, argc, argv, &fp, &argNum))
+	while (getNextArg(arg, argc, argv, fp,&depth, &argNum))
 	{
 		if (!isArgType(arg))
 		{
@@ -63,13 +70,19 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		}
 		else if (FILLARG("--arg-file"))
 		{
-			if (fp!=NULL)
-				fclose(fp);
-			fp=fopen(arg,"r");
-			if (fp == NULL)
+			if (++depth >= MAXDEPTH)
 			{
-				dcerror(1,"Could not open arg file: %s\n",arg);
+				dcerror(1, "Attempting to recurse to deeply into arg-files with this one: %s\n", arg);
 				return 0;
+			}
+			else
+			{
+				fp[depth] = fopen(arg, "r");
+				if (fp[depth] == NULL)
+				{
+					dcerror(1, "Could not open arg file: %s\n", arg);
+					return 0;
+				}
 			}
 		}
 		else if (FILLARG("--phenotype-file"))
@@ -172,8 +185,13 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		{
 			if (!strcmp(arg, "-"))
 			{
-				ef = fp;
-				fp=NULL; // because will get cclosed
+				if (depth == -1)
+				{
+					dcerror(1,"Cannot specify exclusion list on command line with no file as argument.\n");
+					return 0;
+				}
+				ef=fp[depth];
+				--depth; // because file will get cclosed
 			}
 			else
 			{
@@ -232,17 +250,17 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	return 1;
 }
 
-int gvaParams::getNextArg(char *nextArg, int argc,char *argv[], FILE **fpp, int *argNum)
+int gvaParams::getNextArg(char *nextArg, int argc,char *argv[], FILE *fp[MAXDEPTH],int *depth, int *argNum)
 {
 	*nextArg='\0';
-	if (*fpp)
+	while (*depth>-1)
 	{
-		if (fscanf(*fpp,"%s ",nextArg)==1)
+		if (fscanf(fp[*depth],"%s ",nextArg)==1)
 			return 1;
 		else
 		{
-			fclose(*fpp);
-			*fpp = NULL;
+			fclose(fp[*depth]);
+			--*depth;
 		}
 	}
 	if (*argNum < argc)
@@ -253,7 +271,6 @@ int gvaParams::getNextArg(char *nextArg, int argc,char *argv[], FILE **fpp, int 
 	}
 	else
 		return 0;
-
 }
 
 int gvaParams::input(FILE *fp,analysisSpecs &spec)

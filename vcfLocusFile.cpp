@@ -278,7 +278,7 @@ return nSubs;
 
 int vcfLocalLocus::input(FILE *f,FILEPOSITION *locusPosInFile,analysisSpecs const &spec)
 {
-	char chrStr[10],qualstr[VCFFIELDLENGTH],*ptr,*qtr,word[VCFFIELDLENGTH],*chrStrPtr;
+	char chrStr[10],qualstr[VCFFIELDLENGTH],*ptr,*qtr,word[VCFFIELDLENGTH],*chrStrPtr,afstr[20];
 	int foundOneOK=0;
 	while (!foundOneOK) // make this a loop so I can ignore entries which do not pass
 	{
@@ -347,6 +347,7 @@ int vcfLocalLocus::input(FILE *f,FILEPOSITION *locusPosInFile,analysisSpecs cons
 			else
 				SNP=SNP_YES;
 		nAltAlls=0;
+#if 0
 		if ((ptr=strstr(info,"AF="))!=0)
 		{
 			char freqs[100],freqStr[20];
@@ -364,16 +365,30 @@ int vcfLocalLocus::input(FILE *f,FILEPOSITION *locusPosInFile,analysisSpecs cons
 			}
 			// nAltAlls=a; the problem with this is that VCF may have only one MAF even though >1 alt allele, so best not to set it
 		}
-		eurAF=0;
-		if ((ptr=strstr(info,";AF="))!=0)
-		{
-			AF=atof(ptr+4);
-			eurAF=AF; // set to be same as AF first, then overwrite if it is available
+#endif
+		AF=AC=AN=-1;
+		sprintf(afstr,";%s=",spec.alleleFreqStr);
+		if ((ptr=strstr(info,afstr))!=0)
+			AF=atof(ptr+strlen(afstr));
+		sprintf(afstr,";%s=",spec.alleleNumberStr);
+		if ((ptr=strstr(info,afstr))!=0)
+			AN=atof(ptr+strlen(afstr));
+		sprintf(afstr,";%s=",spec.alleleCountStr);
+		if ((ptr=strstr(info,afstr))!=0)
+			AC=atof(ptr+strlen(afstr));
+		if (AF==-1 && AC!=-1 && AN!=-1)
+			AF=AC/AN;
+		if (AF == -1)
+		{	
+#if 0
+			sprintf(afstr,";AF=");
+			if ((ptr=strstr(info,afstr))!=0)
+				AF=atof(ptr+strlen(afstr));
+			// in 1000G, some variants have AF but not EUR_AF
+#endif
+			AF=0;
 		}
-		if ((ptr=strstr(info,"EUR_AF="))!=0)
-			eurAF=atof(ptr+7);
-		else if ((ptr=strstr(info,"AF_EUR="))!=0)
-			eurAF=atof(ptr+7);
+
 	if (strcmp(qualstr,"."))
 		qual=atof(qualstr);
 	else

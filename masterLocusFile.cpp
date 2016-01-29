@@ -120,6 +120,7 @@ const char *masterLocus::getID() //access function
 	char *IDptr;
 	int l;
 	IDptr=masterID;
+#if 0
 	if (*masterID=='\0')
 		for (l = 0; l < nLocusFiles; ++l)
 		{
@@ -127,6 +128,8 @@ const char *masterLocus::getID() //access function
 				IDptr=myLocalLocus[l]->id;
 			// just assume the longest is the best one to use
 		}
+// masterTD should have been set to the best ID and otherwise may pull an invalid ID from a local locus actually belongs to a different position, I think
+#endif
 	return IDptr;
 #if 0
 	char id[VCFFIELDLENGTH];
@@ -171,7 +174,6 @@ int localLocus::typeSpecificCopy(localLocus *src)
 	SNP=src->SNP;
 	BCOPY(filter,src->filter);
 	AF=src->AF;
-	eurAF=src->eurAF;
 	BCOPY(PolyPhen,src->PolyPhen);
 	return 1;
 }
@@ -189,7 +191,6 @@ int localLocus::read(FILE *fp)
 	fread(&SNP,sizeof(SNP),1,fp);
 	BREAD(filter,fp);
 	fread(&AF,sizeof(AF),1,fp);
-	fread(&eurAF,sizeof(eurAF),1,fp);
 	BREAD(PolyPhen,fp);
 	return 1;
 }
@@ -207,7 +208,6 @@ int localLocus::write(FILE *fp)
 	fwrite(&SNP,sizeof(SNP),1,fp);
 	BWRITE(filter,fp);
 	fwrite(&AF,sizeof(AF),1,fp);
-	fwrite(&eurAF,sizeof(eurAF),1,fp);
 	BWRITE(PolyPhen,fp);
 	return 1;
 }
@@ -719,7 +719,7 @@ if (recPos!=0L)
 		freqs[locusCount]=tempRecord.myLocalLocus[cc].eurAF;
 #else
 		if (strcmp(tempRecord.myLocalLocus[cc]->filter,"UNTYPED"))
-			freqs[locusCount]=tempRecord.myLocalLocus[cc]->eurAF;
+			freqs[locusCount]=tempRecord.myLocalLocus[cc]->AF;
 		else
 			freqs[locusCount]=0;
 		// I am not sure if this is right but at least I can break here
@@ -739,7 +739,7 @@ int masterLocusFile::outputSAInfo(int *useLocus,float *locusWeight,analysisSpecs
 	int locusCount;
 	FILEPOSITION recPos;
 	const char *testKey;
-	int c;
+	int c,i,doNotUseUntypedFreqfile;
 	consequenceType cons;
 	locusCount=0;
 recPos=findFirstInRange(spec);
@@ -760,7 +760,14 @@ if (recPos!=0L)
 		else
 		{
 			load(tempRecord,recPos);
-			if (tempRecord.isSNP()!=SNP_YES && spec.onlyUseSNPs==1)
+			doNotUseUntypedFreqfile=0;
+			if (spec.unknownIfUntyped)
+			{
+				for (i=0;i<nLocusFiles;++i)
+					if (holdsFreqs[i] && !strcmp(tempRecord.myLocalLocus[i]->filter,"UNTYPED"))
+						doNotUseUntypedFreqfile=1;
+			}
+			if (doNotUseUntypedFreqfile || (tempRecord.isSNP()!=SNP_YES && spec.onlyUseSNPs==1))
 			{
 				locusWeight[locusCount]=0.0;
 				useLocus[locusCount]=0;
@@ -863,10 +870,10 @@ int masterLocusFile::outputCurrentAlleles(allelePair *all, analysisSpecs &spec)
 	int i,subCount;
 	if (spec.unknownIfUntyped==0)
 		{
-			spec.eurAltIsCommon=0;
+			spec.altIsCommon=0;
 			for (i=0;i<nLocusFiles;++i)
-				if (tempRecord.myLocalLocus[i]->eurAF>0.5)
-					spec.eurAltIsCommon=1;
+				if (tempRecord.myLocalLocus[i]->AF>0.5)
+					spec.altIsCommon=1;
 		}
 	for (subCount=0,i=0;i<nLocusFiles;++i)
 		{
@@ -881,7 +888,7 @@ int masterLocusFile::outputAlleles(allelePair **all, analysisSpecs &spec)
 	int locusCount, subCount;
 	FILEPOSITION recPos;
 	const char *testKey;
-	int c, i, eurAltIsCommon;
+	int c, i, altIsCommon;
 	locusCount = 0;
 // hereOK();
 	if (gotoFirstInRange(spec))
@@ -980,7 +987,7 @@ int masterLocus::outputAlleles(allelePair *all,FILE *f,int whichFile,int nSubs,a
 				all[s][0]=all[s][1]=0;
 		else
 			for (s=0;s<nSubs;++s)
-				all[s][0]=all[s][1]=spec.eurAltIsCommon?2:1; // mark all as homozygous for common allele, pretty unsatisfactory because there should be a call
+				all[s][0]=all[s][1]=spec.altIsCommon?2:1; // mark all as homozygous for common allele, pretty unsatisfactory because there should be a call
 	}
 	else if (strcmp(myLocalLocus[whichFile]->filter,"PASS") && spec.unknownIfNoPass)
 			for (s=0;s<nSubs;++s)
@@ -1450,7 +1457,7 @@ void localLocus::clear()
 	nAltAlls=0;
 	for (i=0;i<MAXALL;++i)
 		alleleFreq[i]=0;
-	eurAF=AF=0;
+	AF=0;
 	strcpy(filter,"UNTYPED");
 	id[0]=ref[0]=alt[0]=PolyPhen[0]='\0';
 }
@@ -1487,9 +1494,11 @@ locusFiles=new LOCUSFILEPTR[nLF];
 fileTypes=new locusFileType[nLF];
 nSubs=new int[nLF];
 cc=new int[nLF];
+holdsFreqs=new int[nLF];
 for (i = 0; i < nLF; ++i)
 {
 	locusFiles[i] = 0;
+	holdsFreqs[i]=0;
 	lfFileNames[i][0]='\0';
 }
 recordFile=0;
@@ -1525,6 +1534,7 @@ masterLocusFile::~masterLocusFile()
 	delete[] cc;
 	delete[] locusFiles;
 	delete[] fileTypes;
+	delete[] holdsFreqs;
 	if (tempLocus!=0)
 		delete tempLocus;
 }

@@ -17,12 +17,15 @@ all:
 	cd ../obj; \
 	make -f ../vcfcode/vcf.mak INOBJ=INOBJ ; \
 	cp groupGetGenotypes genePhaseRec geneTestRec geneVarAssoc groupVarAssoc geneVarAssocAll geneVarAssocSome showAltSubs SNPVarAssoc ${DCBIN} ; \
+	echo copied executables to ${DCBIN} ; \
 	cd ../vcfcode
 endif
 # unless you have a folder on path called $DCBIN you should delete that line to copy the executables to it
 
 clean:
-	rm *.o
+	cd ../obj ; \
+	rm *.o ; \
+	cd ../vcfcode
 
 VPATH=../vcfcode
 	

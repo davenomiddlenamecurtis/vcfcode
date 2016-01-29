@@ -70,6 +70,8 @@ int main(int argc,char *argv[])
 			else if (!gcont.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
 				extractedOK=0;
 			vf.addLocusFile(fn,VCFFILE);
+			if (gp.useFreqs[0])
+				vf.setHoldsFreqs(0,1);
 			if (!vf.readLocusFileEntries(fn,spec,0))
 				extractedOK=0;
 		}
@@ -82,6 +84,8 @@ int main(int argc,char *argv[])
 			else if (!gcase.extractGene(r,fn,0,spec.addChrInVCF[ff++]))
 				extractedOK=0;
 			vf.addLocusFile(fn,VCFFILE);
+			if (gp.useFreqs[1])
+				vf.setHoldsFreqs(gp.nCc[1],1);
 			if (!vf.readLocusFileEntries(fn,spec,1))
 				extractedOK=0;
 		}

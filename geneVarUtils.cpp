@@ -45,6 +45,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	spec.useHaplotypes=0;
 	spec.GQThreshold=0;
 	*referencePath=*sequencePath=*posName='\0';
+	*spec.alleleFreqStr=*spec.alleleNumberStr=*spec.alleleCountStr='\0';
 	spec.nExc=0;
 	dontExtractGene=0;
 	keepTempFiles=0;
@@ -112,6 +113,12 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 			strcpy(ccFn[1][nCc[1]++], arg);
 		else if (FILLARG("--ref-gene-file"))
 			strcpy(geneListFn, arg);
+		else if (FILLARG("--allele-freq-str"))
+			strcpy(spec.alleleFreqStr, arg);
+		else if (FILLARG("--allele-number-str"))
+			strcpy(spec.alleleNumberStr, arg);
+		else if (FILLARG("--allele-count-str"))
+			strcpy(spec.alleleCountStr, arg);
 		else if (FILLARG("--bait-file"))
 			strcpy(baitFn, arg);
 		else if (FILLARG("--upstream"))

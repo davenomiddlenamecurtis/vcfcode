@@ -1,0 +1,137 @@
+		geneVarAssoc is a utility to set up analyses with scoreassoc, which is documented separately.
+		
+		Broadly, it take vcf files for cases and controls, extracts variants for a gene, produces the necessary input files for scoreassoc and then runs scoreassoc.
+		
+		The arguments can be specified on the command line or in a file or using a combination of both. The arguments are in pairs, with the first member of the pair, starting with --, specifying the option to be set and the second member the value for that option.
+		
+		When vcf file names are specified, if they contain the * character then this means that there are different vcf files for each chromosome and the * will be substituted with the chromosome number to extract the relevant variants for a particular gene.
+		
+		Here is the list of options:
+		
+		--arg-file filename
+		Specifies the name of a file from which to read additional arguments. Once the file is read further options will be read from the current input source, whether it be  the command line or a file. Thus, argument files can be nested. The simplest way to run the program is to put all the arguments in a single file (e.g. options.txt) and then to enter:
+		geneVarAssoc --arg-file options.txt --gene DRD2
+	
+		--phenotype-file filename
+		Specifies the phenotypes of the subjects in the vcf file(s). There is one row per subject, consisting of a 0 or 1 (for case or control) and then the subject ID as in the vcf file
+		
+		--trio-file filename
+		Specifies that the subjects consist of sets of trios as defined in the file. Each subject to be used occupies one row. The first entry is the ID of the subject, as in the vcf file. If the subject has parents then their IDs are given next, father then mother. If the subject is a parent then the parental IDs are given as 0 0. Subjects in the vcf file but not in this file will be ignored.
+		
+		--cont-freq-file filename
+		Specifies a vcf file providing the allele frequencies of variants in controls. If this option is used there will be no vcf file for control genotypes.
+		
+		--num-cont
+		Specifies the number of controls used to obtain the control allele frequencies, i.e. the total number of controls genotyped. The number of successful genotypes may vary slightly between variants but the maximum number should be given here.
+		
+		--case-freq-file
+		Specifies a vcf file providing the allele frequencies of variants in cases. If this option is used there will be no vcf file for casegenotypes.
+		
+		--num-case
+		Specifies the number of cases used to obtain the control allele frequencies, i.e. the total number of cases genotyped. The number of successful genotypes may vary slightly between variants but the maximum number should be given here.
+		
+		--position chr:pos
+		A coordinate is given consisting of a chromosome followed by a colon and then base position, to be used by related programs.
+		
+--cont-file filename
+		Provides the name of a vcf file containing control subject genotypes. There can be more than one of these.
+			
+		--case-file Provides the name of a vcf file containing case subject genotypes. There can be more than one of these. If case and control subjects are in the same file then this should be specified as the case file and the phenotype status should be specified using the --phenotype-file option. If trios are used then it is assumed that the child in each trio is affected and the vcf file containing them is specified using --case-file while the trio structure is defined using --trio-file.
+		
+		--ref-gene-file filename
+		Specifies a file in refseq format, with first line beginning:
+		#bin    name    chrom   strand  txStart etc.
+		The file should have been sorted on the gene name to bring all transcripts for each gene together. E.g. refseqgenesorted101115.txt.
+		
+		--allele-freq-str string
+		String used to recognise the allele frequency entry in a vcf file which is used to provide allele frequencies for cases or controls. If the vcf file contains entries such as …;EUR_AF=0.42;… then one would specify --allele-freq-str EUR_AF
+		
+		--allele-number-str str
+		String used to recognise the allele number entry in a vcf file which is used to provide allele frequencies for cases or controls. If the vcf file contains entries such as …;EUR_AN=2414;… then one would specify --allele-number-str EUR_AN
+		
+		--allele-count-str str
+		String used to recognise the alternate allele count entry in a vcf file which is used to provide allele frequencies for cases or controls. If the vcf file contains entries such as …;EUR_AC=27;… then one would specify --allele-number-str EUR_AC. If there is no allele frequency field then the frequency will be calculated as the count divided by the number (as in ExAC).
+		
+		--bait-file filename
+		File containing coordinates for the baits. If this is specified then they will be used to determine the coordinates of exomes to extract rather than relying only on the gene coordinates in the refseq file.
+			
+		--upstream number
+		Number of bases upstream of the gene to extract.
+			
+		--downstream number
+		Number of bases downstream of the gene to extract.
+		
+		--margin number
+		Number of additional bases around the baits to extract.
+			
+		--weight-factor wf
+		Weight factor to provide to scoreassoc.
+		
+		--use-ensembl 0 or 1
+		If 1, use ensembl to carry out annotation.
+		
+		--consequence-threshold num
+		Tell scoreassoc to only use variants with an annotation number of num or higher (nonsynonymous=8).
+		
+		--use-consequence-weights 0 or 1
+		If 1, provide scoreassoc with functional weights for each variant, such that variants with predicted effect on function are weighted more highly.
+		
+		--only-use-SNPs 0 or 1
+		If 1, only use variants with two alleles, each consisting of a single base.
+			
+		--write-comments 0 or 1
+		If 1, provide information about each variant to scoreassoc to be output as comments.
+		
+		--write-score-file 0 or 1
+		If 1, instruct scoreassoc to output scores as well as standard output file.
+		
+		--do-recessive-test 0 or 1
+		If 1, instruct scoreassoc to test for recessive effects.
+		--weight-threshold threshold
+		Instructs scoreassoc to only use those variants whose weight (based on rarity and function) exceeds the threshold.
+		
+		--LD-threshold threshold
+		Instructs scoreassoc to drop a variant which occurs in more than the stated proportion of subjects with another variant.
+		
+		--add-chr 0 or 1 or 0011001, etc.
+		If 1, adds CHR to the chromosome number when running tabix to extract variants from all the vcf files. If 0, adds CHR for none of them. If a sequence of 0's and 1's, equal in length to the number of vcf files, then adds CHR to the vcf files coresponding to the 1's.
+			
+		--unknown-if-untyped 0 or 1
+		If 1, treat a variant which has no entry in a vcf file as having unknown genotype. If 0, treat it as all subjects being wild type. If 1 and a frequency file is used then any variants missing from the frequency file will be omitted from the analysis. If 0 they will be treated as having frequency of 0 (i.e. all wild type).
+		
+		--unknown-if-no-pass 0 or 1
+		If 1, variants without a PASS will be treated as unknown. If 0, the genotypes will be used.
+			
+		--skip-if-no-pass 0 or 1
+		If 1, variants without a PASS will be omitted rather than being treated as unknown.
+		
+		--ignore-alleles 0 or 1
+		If 1, treat variants at the same position but with possibly different sets of alleles as being the same variant.
+		
+		--use-haplotypes 0 or 1
+		If 1, instruct scoreassoc to treat the genotypes as phased for recessive analyses.
+		
+		--dont-extract-gene 0 or 1
+		If 1, skip over the step of extracting the variants from the vcf file and assume that the necessary files have already been created. Used for debugging.
+		
+		--keep-temp-files 0 or 1
+		If 1, do not delete the temporary vcf files which are extracted from the main ones.
+		--reference-path pathname
+		Provides the name of the folder containing the reference genome files, having names such as chr17.fa, etc.
+			
+		--sequence-path pathname
+		This can be used to provide the name of the folder containing the main vcf files. If this is specified, then rather than providing the full path for each vcf file one would specify just the file name. This potentially allows different analyses to look for the same files in different places and is intended to facilitate using scratch space, etc.
+			
+		--GQ-threshold threshold
+		Only output genotypes reaching this threshold and treat others as unknown.
+		--gene name
+		Provide the name of the gene to be extracted and analysed.
+		
+		--clear-cont 0 or 1
+		If 1, clears all the previously specified control files. This allows a subsequent arg-file to ignore what has preceded it and specify new control files from scratch.
+		
+--clear-case 0 or 1
+		If 1, clears all the previously specified case files. This allows a subsequent arg-file to ignore what has preceded it and specify new case files from scratch.
+		
+		--exclusion-list filename or --
+		Reads exclusions a line at a time and passes them unchanged to scoreassoc. If instead of  a filename -- is specified then the exclusions will be read from the current file until the end of file is reached.

@@ -134,45 +134,33 @@ int refseqTranscript::getEffect(faSequenceFile &f,int pos,char *all0,char *all1,
 	{
 		// put the (starts+1) in parentheses to make up for them being zero-based
 		spliceSiteType sT;
+		bool essential;
 		int sSStart,sSEnd;
-		if (strand=='+' && pos>exonEnds[i]-NSBDONOREXON && pos<=exonEnds[i]+NSBDONORINTRON)
-			getSpliceSiteSequence(f,exonEnds[i]-NSBDONOREXON+1,exonEnds[i]+NSBDONORINTRON,DONOR,pos,all0,all1);
-		else if (strand=='+' && pos>=(exonStarts[i+1]+1)-NSBACCEPTORINTRON && pos<(exonStarts[i+1]+1)+NSBACCEPTOREXON)
-			getSpliceSiteSequence(f,(exonStarts[i+1]+1)-NSBACCEPTORINTRON,(exonStarts[i+1]+1)+NSBACCEPTOREXON-1,ACCEPTOR,pos,all0,all1);
-		else if (strand=='-' && pos>exonEnds[i]-NSBACCEPTOREXON && pos<=exonEnds[i]+NSBACCEPTORINTRON)
-			getSpliceSiteSequence(f,exonEnds[i]-NSBACCEPTOREXON+1,exonEnds[i]+NSBACCEPTORINTRON,ACCEPTOR,pos,all0,all1);
-		else if (strand=='-' && pos>=(exonStarts[i+1]+1)-NSBDONORINTRON && pos<(exonStarts[i+1]+1)+NSBDONOREXON)
-			getSpliceSiteSequence(f,(exonStarts[i+1]+1)-NSBDONORINTRON,(exonStarts[i+1]+1)+NSBDONOREXON-1,DONOR,pos,all0,all1);
+		if (strand == '+' && pos>exonEnds[i] - NSBDONOREXON && pos <= exonEnds[i] + NSBDONORINTRON)
+		{
+			essential=pos>exonEnds[i] && pos <= exonEnds[i] + 2;
+			getSpliceSiteSequence(f, exonEnds[i] - NSBDONOREXON + 1, exonEnds[i] + NSBDONORINTRON, DONOR, essential, pos, all0, all1);
+		}
+		else if (strand == '+' && pos >= (exonStarts[i + 1] + 1) - NSBACCEPTORINTRON && pos<(exonStarts[i + 1] + 1) + NSBACCEPTOREXON)
+		{
+			essential=(exonStarts[i + 1] + 1) - 2 && pos<(exonStarts[i + 1] + 1);
+			getSpliceSiteSequence(f, (exonStarts[i + 1] + 1) - NSBACCEPTORINTRON, (exonStarts[i + 1] + 1) + NSBACCEPTOREXON - 1, ACCEPTOR, essential, pos, all0, all1);
+		}
+		else if (strand == '-' && pos>exonEnds[i] - NSBACCEPTOREXON && pos <= exonEnds[i] + NSBACCEPTORINTRON)
+		{
+			essential=pos>exonEnds[i] && pos <= exonEnds[i] + 2;
+			getSpliceSiteSequence(f, exonEnds[i] - NSBACCEPTOREXON + 1, exonEnds[i] + NSBACCEPTORINTRON, ACCEPTOR, essential, pos, all0, all1);
+		}
+		else if (strand == '-' && pos >= (exonStarts[i + 1] + 1) - NSBDONORINTRON && pos < (exonStarts[i + 1] + 1) + NSBDONOREXON)
+		{
+			essential=pos >= (exonStarts[i + 1] + 1) - 2 && pos < (exonStarts[i + 1] + 1);
+			getSpliceSiteSequence(f, (exonStarts[i + 1] + 1) - NSBDONORINTRON, (exonStarts[i + 1] + 1) + NSBDONOREXON - 1, DONOR, essential, pos, all0, all1);
+		}
 		else if (pos>exonEnds[i]&&pos<=exonStarts[i+1])
 			effect.consequence[effect.nConsequence++]=INTRONIC;
+		// calling getSpliceSiteSequence sets effect.consequence[effect.nConsequence++]
 	}
 
-#if 0
-	else for (i=0;i<exonCount-1;++i)
-	{
-		// establish if it is in an exonic splice site
-		if (strand=='+' && pos>exonEnds[i]-NSBDONOREXON && pos<=exonEnds[i])
-			effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-		else if (strand=='+' && pos>exonStarts[i+1]+1 && pos<=exonStarts[i+1]+1+NSBACCEPTOREXON)
-			effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-		else if (strand=='-' && pos>exonEnds[i]-NSBACCEPTOREXON && pos<=exonEnds[i])
-			effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-		else if (strand=='-' && pos>exonStarts[i+1]+1 && pos<=exonStarts[i+1]+1+NSBDONOREXON)
-			effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-		else if (pos>exonEnds[i]&&pos<=exonStarts[i+1])
-		{
-			if (strand=='+' && pos>exonEnds[i] && pos<=exonEnds[i]+NSBDONORINTRON)
-				effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-			else if (strand=='+' && pos>=exonStarts[i+1]+1-NSBACCEPTORINTRON && pos<exonStarts[i+1]+1)
-				effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-			if (strand=='-' && pos>exonEnds[i] && pos<=exonEnds[i]+NSBACCEPTORINTRON)
-				effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-			else if (strand=='-' && pos>=exonStarts[i+1]+1-NSBDONORINTRON && pos<exonStarts[i+1]+1)
-				effect.consequence[effect.nConsequence++]=SPLICE_SITE;
-			else effect.consequence[effect.nConsequence++]=INTRONIC;
-		}
-	}
-#endif
 	// this will miss situation where insertion hits start of exon
 	if (effect.nConsequence!=0)
 		return 1;
@@ -260,7 +248,7 @@ const char *refseqGeneInfo::tellEffect()
 	return featureBuff;
 }
 
-int refseqTranscript::getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sSEnd,spliceSiteType sST,int pos,char *a0,char *a1)
+int refseqTranscript::getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sSEnd,spliceSiteType sST,bool essential,int pos,char *a0,char *a1)
 {
 	char all0[2],all1[2];
 	all0[0]=a0[0];
@@ -282,14 +270,14 @@ int refseqTranscript::getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sS
 			{
 				if (toupper(buff[i])!=all0[0])
 					{
-						dcerror(1,"base in site does not match reference allele %c at position %d",
+						dcerror(1,"base in site does not match reference allele %c at position %d - ",
 							all0[0],pos);
 						if (toupper(buff[i])!=all1[0])
-							dcerror(1,"it does not match alt allele %c either",all1[0]);
+							dcerror(1,"it does not match alt allele %c either\n",all1[0]);
 						else
 						{
 							char a;
-							dcerror(0,"Will swap and use alt allele %c as reference",all1[0]);
+							dcerror(0,"Will swap and use alt allele %c as reference\n",all1[0]);
 							a=all0[0]; all0[0]=all1[0]; all1[0]=a;
 						}
 					}
@@ -315,12 +303,12 @@ int refseqTranscript::getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sS
 // Y-rich-N-C-A-G-[cut]-G (acceptor site)
 	if (sST==DONOR)
 		for (i=NSBDONOREXON;i<NSBDONOREXON+2;++i)
-			sSSeq[0][i]=toupper(sSSeq[0][i]); // aim to upper-case the invariant GU ?GT?
+			sSSeq[0][i]=toupper(sSSeq[0][i]); // aim to upper-case the invariant GT
 	else
 		for (i=NSBACCEPTORINTRON-2;i<NSBACCEPTORINTRON;++i)
 			sSSeq[0][i]=toupper(sSSeq[0][i]); // aim to upper-case the invariant AG 
 	sprintf(effect.spliceStr,"%s/%s",sSSeq[0],sSSeq[1]);
-	effect.consequence[effect.nConsequence++]=SPLICE_SITE;
+	effect.consequence[effect.nConsequence++]=essential?ESSENTIAL_SPLICE_SITE:SPLICE_SITE;
 }
 
 int refseqTranscript::getCodingEffect(faSequenceFile &f,int pos,char *a0,char *a1)

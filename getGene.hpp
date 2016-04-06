@@ -37,7 +37,7 @@ int txStart, txEnd,cdsStart,cdsEnd;
 	varEffect effect;
 	int getEffect(faSequenceFile &f,int pos,char *all0,char *all1,int promoterLength=PROMOTERLENGTH,int downstreamLength=DOWNSTREAMLENGTH,int getKozak=0);
 	int getCodingEffect(faSequenceFile &f,int pos,char *all0,char *all1);
-	int getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sSEnd,spliceSiteType sST,int pos,char *a0,char *a1);
+	int getSpliceSiteSequence(faSequenceFile &f,int sSStart,int sSEnd,spliceSiteType sST, bool essential, int pos,char *a0,char *a1);
 	int checkExonLengths();
 public:
 	int read(char *s);

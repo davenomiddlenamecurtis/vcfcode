@@ -468,6 +468,11 @@ int masterLocusFile::writeScoreAssocFiles(char *root, float wf, int wFunc, int *
 	return writeScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,spec);
 }
 
+int masterLocusFile::writepScoreAssocFiles(char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScoreFile, analysisSpecs &spec)
+{
+	return writepScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,writeScoreFile, spec);
+}
+
 int masterLocusFile::loadFirst(analysisSpecs &spec)
 {
 	currentRecPos=findFirstInRange(spec);
@@ -664,6 +669,208 @@ int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, f
 	return 1;
 }
 
+int masterLocusFile::writepScoreAssocFiles(masterLocusFile &subFile,char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScorefile,analysisSpecs &spec)
+// allow information about subjects to be provided by a different masterLocusFile 
+// however we are assuming both files refer to identical set of subjects
+{
+	char fn[100],buff[1000],buff2[20],comment[1000],*ptr,alleles[MAXSTR+1],commandString[1000];
+	allelePair **a;
+	probTriple **p;
+	int totalSub,lc,s,l,ss,i,c;
+	FILE *fp;
+	FILEPOSITION recPos;
+	const char *testKey;
+	strEntry *subName;
+	if (nLocusFiles==1)
+		nSubs[0]=subFile.getTotalSubs();
+	else if (nLocusFiles==subFile.nLocusFiles)
+		for (i=0;i<nLocusFiles;++i)
+			nSubs[i]=subFile.nSubs[i];
+	else
+	{
+		dcerror(99,"Incompatible numbers of subjects in subFile in masterLocusFile::writeScoreAssocFiles()");
+		return 0;
+	}
+	openLocusFiles();
+	for (i=0,totalSub=0;i<subFile.nLocusFiles;++i)
+		totalSub+=subFile.nSubs[i];
+	subName=(strEntry *)calloc(totalSub,sizeof(strEntry));
+// hereOK();
+	subFile.outputSubNames(subName,spec);
+// hereOK();
+	if (spec.useProbs)
+	{
+		assert((p = (probTriple **)calloc(MAXLOCIINSCOREASSOCFILE, sizeof(probTriple*))) != 0);
+		for (l = 0; l < MAXLOCIINSCOREASSOCFILE; ++l)
+			p[l] = (probTriple *)calloc(totalSub, sizeof(probTriple));
+		lc = outputProbs(p, spec);
+	}
+	else
+	{
+		assert((a = (allelePair **)calloc(MAXLOCIINSCOREASSOCFILE, sizeof(allelePair*))) != 0);
+		for (l = 0; l < MAXLOCIINSCOREASSOCFILE; ++l)
+			a[l] = (allelePair *)calloc(totalSub, sizeof(allelePair));
+		lc = outputAlleles(a, spec);
+	}
+// hereOK();
+	sprintf(fn,"%s.dat",root);
+	fp=fopen(fn,"w");
+	for (s=0,i=0;i<subFile.nLocusFiles;++i)
+	for (ss=0;ss<subFile.nSubs[i];++s,++ss)
+	{
+		fprintf(fp,"%s\t%d\t",subName[s],spec.phenotypes?spec.phenotypes[s]:subFile.cc[i]);
+		for (l=0;l<lc;++l)
+			if (spec.useProbs)
+			{
+				fprintf(fp, "%5.3f %5.3f %5.3f\t",p[l][s][0],p[l][s][1],p[l][s][2]);
+			}
+			else
+			{
+				fprintf(fp, "%d %d\t",
+					(a[l][s][0]>1) ? 2 : a[l][s][0],
+					(a[l][s][1] > 1) ? 2 : a[l][s][1]); // force to be biallelic
+			}
+		fprintf(fp,"\n");
+	}
+	fclose(fp);
+	sprintf(commandString,"pscoreassoc --gcdatafile %s --numloci %d",fn,lc);
+	outputSAInfo(useLocus,locusWeight,spec);
+	sprintf(fn,"%s.lf.par",root);
+	fp=fopen(fn,"w");
+	for (l=0;l<lc;++l)
+			fprintf(fp,"%d ",useLocus[l]);
+	fprintf(fp,"\n");
+	fclose(fp);
+	sprintf(strchr(commandString,'\0')," --locusfilterfile %s",fn);
+#if 0
+	fprintf(fp,"\n%f %d\n%d %d %d %d %d %d %f %f %d %d\n",
+		wf,
+		wFunc,
+		spec.useConsequenceWeights,
+		useFreqs[0],
+		useFreqs[1],
+		writeNames,
+		writeComments,
+		spec.doRecessiveTest,
+		spec.weightThreshold,
+		spec.LDThreshold,
+		spec.useHaplotypes,
+		spec.useTrios);
+#endif
+	if (spec.useConsequenceWeights)
+	{
+		sprintf(fn,"%s.lw.par",root);
+		fp=fopen(fn,"w");
+		for (l=0;l<lc;++l)
+			fprintf(fp,"%8.5f ",locusWeight[l]);
+		fprintf(fp,"\n");
+		fclose(fp);
+	sprintf(strchr(commandString,'\0')," --locusweightfile %s",fn);
+	}
+	for (i=0;i<2;++i)
+		if (useFreqs[i])
+		{
+			float *freqs;
+			freqs=new float[lc];
+			// outputAltFrequencies(freqs,i,sc,sp,ec,ep);
+			outputEurAltFrequencies(freqs,i,spec);
+			sprintf(fn,"%s.%s.freq.par",root,i?"case":"cont");
+			fp=fopen(fn,"w");
+			for (l=0;l<lc;++l)
+				fprintf(fp,"%8.6f ",freqs[l]);
+			fprintf(fp,"\n");
+			for (l=0;l<lc;++l)
+				fprintf(fp,"%8d ",suppliedNSubs[i]);  
+			// assume that if AF available nSubs is unknown
+			// change this later to use nSubs if available
+			fprintf(fp,"\n");
+			fclose(fp);
+			sprintf(strchr(commandString,'\0')," --%sfreqfile %s",i?"case":"cont",fn);
+			delete[] freqs;
+		}
+// no longer dealing with names seperately
+	if (writeComments)
+	{
+		sprintf(fn,"%s.comm.par",root);
+		fp=fopen(fn,"w");
+		recPos=findFirstInRange(spec);
+	if (recPos!=0L)
+		while (1)
+		{
+			testKey=index.current_key();
+			if ((c=atoi(testKey))==0 || c>spec.ec)
+				break;
+			if (c==spec.ec && atol(testKey+3)>spec.ep)
+				break;
+			load(tempRecord,recPos);
+			if (tempRecord.ensemblConsequence[0]!='\0')
+				sprintf(comment,"%d:%ld:%s:%s",tempRecord.chr,tempRecord.pos,tempRecord.getID(),tempRecord.ensemblConsequence);
+			else if (tempRecord.quickConsequence[0]!='\0')
+				sprintf(comment,"%d:%ld:%s:%s",tempRecord.chr,tempRecord.pos,tempRecord.getID(),tempRecord.quickConsequence);
+			else
+				sprintf(comment,"%d:%ld:%s:",tempRecord.chr,tempRecord.pos,tempRecord.getID());
+			for (ptr=comment;*ptr;++ptr)
+				if (isspace(*ptr))
+					*ptr='_';
+			strcat(comment,"-");
+			buff[0]='\0';
+			for (i=0;i<tempRecord.nAlls;++i)
+				sprintf(strchr(buff,'\0'),"%s%c",tempRecord.alls[i],i==tempRecord.nAlls-1?'\0':'/');
+			strncpy(alleles,buff,MAXSTR);
+			alleles[MAXSTR]='\0';
+			strcat(comment,alleles);
+			if (tempRecord.PolyPhen[0])
+			{
+				strcat(comment,":PolyPhen:");
+				strcat(comment,tempRecord.PolyPhen);
+			}
+			fprintf(fp,"%s ",comment);
+			recPos=index.get_next();
+			if (recPos==0L)
+				break;
+		}
+	fprintf(fp,"\n");
+	fclose(fp);
+	sprintf(strchr(commandString,'\0')," --locusnamefile %s",fn);
+	}
+
+	if (spec.useTrios)
+		sprintf(strchr(commandString,'\0')," --triofile %s",spec.triosFn);
+	if (spec.nExc > 0)
+	{
+		sprintf(fn,"%s.filter.par",root);
+		fp=fopen(fn,"w");
+		for (i = 0; i < spec.nExc; ++i)
+			fprintf(fp, "%s\n", spec.exclusionStr[i]);
+		fclose(fp);
+		sprintf(strchr(commandString,'\0')," --filterfile %s",fn);
+	}
+	sprintf(strchr(commandString,'\0')," --outfile %s.sao",root);
+	if (writeScorefile)
+		sprintf(strchr(commandString,'\0')," --scorefile %s.sco",root);
+#ifndef MSDOS
+	sprintf(fn,"%s.sh",root);
+#else
+	sprintf(fn,"%s.bat",root);
+#endif
+	fp=fopen(fn,"w");
+	fprintf(fp,"%s\n",commandString);
+	fclose(fp);
+	if (spec.useProbs)
+	{
+		for (l = 0; l < MAXLOCIINSCOREASSOCFILE; ++l)
+			free(p[l]);
+		free(p);
+	}
+	else
+	{
+		for (l = 0; l < MAXLOCIINSCOREASSOCFILE; ++l)
+			free(a[l]);
+		free(a);
+	}
+	free(subName);
+	return 1;
+}
 
 int masterLocusFile::outputAltFrequencies(float *freqs,int cc,analysisSpecs const &spec)
 {
@@ -865,6 +1072,24 @@ int masterLocusFile::gotoNextInRange(analysisSpecs &spec)
 		return 1;
 }
 
+int masterLocusFile::outputCurrentProbs(probTriple *prob, analysisSpecs &spec)
+{
+	int i,subCount;
+	if (spec.unknownIfUntyped==0)
+		{
+			spec.altIsCommon=0;
+			for (i=0;i<nLocusFiles;++i)
+				if (tempRecord.myLocalLocus[i]->AF>0.5)
+					spec.altIsCommon=1;
+		}
+	for (subCount=0,i=0;i<nLocusFiles;++i)
+		{
+			tempRecord.outputProbs(prob+subCount,locusFiles[i]->fp,i,nSubs[i],spec);
+			subCount+=nSubs[i];
+		}
+	return 1;
+}
+
 int masterLocusFile::outputCurrentAlleles(allelePair *all, analysisSpecs &spec)
 {
 	int i,subCount;
@@ -881,6 +1106,24 @@ int masterLocusFile::outputCurrentAlleles(allelePair *all, analysisSpecs &spec)
 			subCount+=nSubs[i];
 		}
 	return 1;
+}
+
+int masterLocusFile::outputProbs(probTriple **prob, analysisSpecs &spec)
+{
+	int locusCount, subCount;
+	FILEPOSITION recPos;
+	const char *testKey;
+	int c, i, altIsCommon;
+	locusCount = 0;
+// hereOK();
+	if (gotoFirstInRange(spec))
+	do
+	{
+// hereOK();
+		outputCurrentProbs(prob[locusCount++], spec);
+	} while (gotoNextInRange(spec));
+// hereOK();
+	return locusCount;
 }
 
 int masterLocusFile::outputAlleles(allelePair **all, analysisSpecs &spec)
@@ -976,6 +1219,37 @@ int masterLocusFile::closeLocusFiles()
 return 1;
 }
 
+
+int masterLocus::outputProbs(probTriple *prob,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec)
+{
+	int s;
+	if (!strcmp(myLocalLocus[whichFile]->filter,"UNTYPED"))
+	{
+		if (spec.unknownIfUntyped)
+			for (s=0;s<nSubs;++s)
+				prob[s][0]=prob[s][1]=prob[s][2]=0; // may change this later
+		else
+			for (s = 0; s < nSubs; ++s)
+			{
+				if (spec.altIsCommon)
+				{
+					prob[s][0]=prob[s][1]=0;
+					prob[s][2]=1;
+				}
+				else
+				{
+					prob[s][2]=prob[s][1]=0;
+					prob[s][0]=1;
+				}
+			}
+	}
+	else if (strcmp(myLocalLocus[whichFile]->filter,"PASS") && spec.unknownIfNoPass)
+			for (s=0;s<nSubs;++s)
+				prob[s][0]=prob[s][1]=prob[s][2]=0; // may change this later
+	else
+		return myLocalLocus[whichFile]->outputProbs(prob,f,locusPosInFile[whichFile],nSubs,alleleMapping[whichFile],spec);
+return 1;
+}
 
 int masterLocus::outputAlleles(allelePair *all,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec)
 {
@@ -1467,7 +1741,8 @@ void vcfLocalLocus::clear()
 	localLocus::clear();
 	qual=0;
 	GQpos=-1;
-	GTpos=0;
+	GTpos=-1;
+	GPpos=-1;
 }
 
 int masterLocusFile::setCurrentFile(char *fn)

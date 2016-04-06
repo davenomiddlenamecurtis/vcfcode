@@ -12,6 +12,7 @@ int vcfLocalLocus::typeSpecificCopy(localLocus *s)
 	if (localLocus::typeSpecificCopy(src)==0)
 		return 0;
 	GTpos=src->GTpos;
+	GPpos=src->GPpos;
 	GQpos=src->GQpos;
 	qual=src->qual;
 	BCOPY(info,src->info);
@@ -25,6 +26,7 @@ int vcfLocalLocus::read(FILE *fp)
 	if (localLocus::read(fp)==0)
 		return 0;
 	fread(&GTpos,sizeof(GTpos),1,fp);
+	fread(&GPpos,sizeof(GTpos),1,fp);
 	fread(&GQpos,sizeof(GQpos),1,fp);
 	fread(&qual,sizeof(qual),1,fp);
 	BREAD(info,fp);
@@ -38,6 +40,7 @@ int vcfLocalLocus::write(FILE *fp)
 	if (localLocus::write(fp)==0)
 		return 0;
 	fwrite(&GTpos,sizeof(GTpos),1,fp);
+	fwrite(&GPpos,sizeof(GTpos),1,fp);
 	fwrite(&GQpos,sizeof(GQpos),1,fp);
 	fwrite(&qual,sizeof(qual),1,fp);
 	BWRITE(info,fp);
@@ -53,37 +56,27 @@ void vcfLocalLocus::parseFormat()
 	char *ptr;
 	ptr=format;
 	i=0;
-	while (ptr[0]!='G' || ptr[1]!='T')
+	while (*ptr)
 	{
-		while (*ptr!=':')
+		if (*ptr == 'G')
 		{
-			if (*ptr=='\0')
-			{
-				dcerror(3,"Failed to find GT in format string %s",format);
-				return;
-			}
-			++ptr;
+			if (ptr[1] == 'T')
+				GTpos = i;
+			else if (ptr[1] == 'P')
+				GPpos = i;
+			else if (ptr[1] == 'Q')
+				GQpos = i;
 		}
-		++ptr;
-		++i;
-	}
-	GTpos=i;
-	ptr+=3; // assuming that GQ occurs at some point after GT
-	++i;
-	while (ptr[0]!='G' || ptr[1]!='Q')
-	{
-		while (*ptr!=':')
-		{
-			if (*ptr=='\0')
-			{
-				return;
-			}
+		do {
 			++ptr;
-		}
-		++ptr;
-		++i;
+			if (*ptr == ':')
+			{
+				++ptr;
+				++i;
+				break;
+			}
+		} while (*ptr);
 	}
-	GQpos=i;
 	return;
 }
 
@@ -134,9 +127,77 @@ int vcfLocalLocus::outputVcfGenotypes(FILE *fo,FILE *f,FILEPOSITION filePos,int 
 	return 1;
 }
 
+int vcfLocalLocus::outputProbs(probTriple *prob,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec)
+{
+	char *ptr,allStr[20],*aptr,*ptr2;
+	int s,i;
+	float gq;
+	if (fseek(f,filePos,SEEK_SET)!=0)
+	{
+		dcerror(99,"Failed to fseek() correctly in vcfLocalLocus::outputProbs()");
+		return 0;
+	}
+    if (!fgets(locusFile::buff,BUFFSIZE-1,f))
+	{
+		dcerror(99,"Failed read locus data after fseek() in vcfLocalLocus::outputProbs()");
+		return 0;
+	}
+	for (s=0,ptr=locusFile::buff;s<nFieldsToSkip;++s)
+	{
+		while (!isspace(*ptr))
+			++ptr;
+		while (isspace(*ptr))
+			++ptr;
+	}
+	for (s=0;s<nSubs;++s)
+	{
+		gq=1000;
+		ptr2=ptr;
+		if (*ptr!='.') for (i=0;i<GPpos;++i)
+		{
+			while (*ptr!=':')
+			{
+				if (isspace(*ptr))
+				{
+					dcerror(99,"Not enough genotypes for number of subjects in this line: %s",locusFile::buff);
+					return 0;
+				}
+				++ptr;
+			}
+			++ptr;
+		}
+		sscanf(ptr,"%f,%f,%f",&prob[s][0],&prob[s][1],&prob[s][2]);
+		if (GQpos>0 && *ptr2!='.')
+		{
+		for (i=0;i<GQpos;++i)
+		{
+			while (*ptr2!=':')
+			{
+				if (isspace(*ptr2))
+				{
+					dcerror(99,"Could not read GQ in this line: %s",locusFile::buff);
+					return 0;
+				}
+				++ptr2;
+			}
+			++ptr2;
+		}
+		gq=atof(ptr2);
+		}
+		if (*ptr=='.' || gq<spec.GQThreshold)
+			prob[s][0]=prob[s][1]=prob[s][2]=0;
+		// there may be a problem in dealing with X-linked loci
+		while (!isspace(*ptr))
+			++ptr;
+		while (isspace(*ptr))
+			++ptr;
+	}
+	return 1;
+}
+
 int vcfLocalLocus::outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec)
 {
-	char *ptr,allStr[20],*aptr;
+	char *ptr,allStr[20],*aptr,*ptr2;
 	int s,i;
 	float gq;
 	if (fseek(f,filePos,SEEK_SET)!=0)
@@ -159,6 +220,7 @@ int vcfLocalLocus::outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,in
 	for (s=0;s<nSubs;++s)
 	{
 		gq=1000;
+		ptr2=ptr;
 		if (*ptr!='.') for (i=0;i<GTpos;++i)
 		{
 			while (*ptr!=':')
@@ -172,61 +234,29 @@ int vcfLocalLocus::outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,in
 			}
 			++ptr;
 		}
-#if 0
-		sscanf(ptr,"%[^: \t]",allStr); // make this faster
-#else
 		aptr=allStr;
 		while (*ptr!=':' && *ptr!=' ' && *ptr!='\t')
 			*aptr++=*ptr++;
 		*aptr='\0';
-
-#endif
-		if (GQpos>0 && *allStr!='.')
+		if (GQpos>0 && *ptr2!='.')
 		{
 		for (i=0;i<GQpos;++i)
 		{
-			while (*ptr!=':')
+			while (*ptr2!=':')
 			{
-				if (isspace(*ptr))
+				if (isspace(*ptr2))
 				{
 					dcerror(99,"Could not read GQ in this line: %s",locusFile::buff);
 					return 0;
 				}
-				++ptr;
+				++ptr2;
 			}
-			++ptr;
+			++ptr2;
 		}
-#if 0
-		sscanf(ptr,"%f",&gq);
-#else
-		gq=atof(ptr);
-#endif
+		gq=atof(ptr2);
 		}
-#if 0
-		if (sscanf(ptr,"%[^: \t]:%f",allStr,&gq)<1)
-		{
-			dcerror(99,"Not enough genotypes for number of subjects in this line: %s",buff);
-			return 0;
-		}
-#endif
-#if 0
-previously, unknownIfUntyped could apply for individual subjects, now only for whole VCF file
-		if (allStr[0]=='.')
-		{
-			if (spec.unknownIfUntyped)
-				all[s][0]=all[s][1]=0;
-			else
-				all[s][0]=all[s][1]=1; 
-			// probably what we want, homozygous wildtype
-			// may need to set this to 22 instead of Alt allele is commoner
-		}
-		else if (gq<spec.GQThreshold)
-			all[s][0]=all[s][1]=0;
-		// typed but poor quality
-#else
 		if (allStr[0]=='.' || gq<spec.GQThreshold)
 			all[s][0]=all[s][1]=0;
-#endif
 		else
 		{	
 			if (allStr[1]=='\0')

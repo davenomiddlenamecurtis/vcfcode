@@ -27,9 +27,13 @@ exit(1);
 
 int default_error_func(char *format,va_list arg_ptr)
 {
+#if 0
 char s[2000];
 vsprintf(s,format,arg_ptr);
 fprintf(stderr,"%s",s);
+#else
+vfprintf(stderr,format,arg_ptr);
+#endif
 // system("pause");
 return 0;
 }
@@ -55,7 +59,8 @@ int error_object::operator()(int e,char *format,...)
       }
     }
   va_end(arg_ptr);
-  if (fatal) exit(1);
+  if (fatal)
+	  exit(1);
   return 0;
   }
 

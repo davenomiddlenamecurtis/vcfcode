@@ -4,7 +4,7 @@
 #include "masterLocusFile.hpp"
 
 class vcfLocalLocus : localLocus {
-	int GTpos,GQpos; //position of these variables in genotype entry
+	int GTpos,GQpos,GPpos; //position of these variables in genotype entry
 	float qual;
 	char info[VCFFIELDLENGTH];
 	char format[VCFFIELDLENGTH];
@@ -12,6 +12,7 @@ class vcfLocalLocus : localLocus {
 public:
 	virtual void clear();
 	virtual int outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec);
+	virtual int outputProbs(probTriple *all,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec);
 	virtual const char *getInfo() { return info; }
 	int outputCalls(strEntry *call,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec);
 	int outputVcfGenotypes(FILE *fo,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap);

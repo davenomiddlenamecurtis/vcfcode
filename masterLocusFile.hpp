@@ -46,6 +46,7 @@ masterLocusFile has information about a number of locusFiles, possibly different
 
 typedef char filenamestring[MAXFILENAMELENGTH];
 typedef int allelePair[2];
+typedef float probTriple[3];
 #define MAXSTR 100
 typedef char strEntry[MAXSTR+1];
 #define DEFAULTNUMVCFFIELDSTOSKIP 9 // maybe one day allow this to vary
@@ -76,12 +77,13 @@ public:
 		LDThreshold=1;
 		phenotypes=NULL;
 		useHaplotypes=0;
+		useProbs=0;
 		count_hom_as_het=0;
 		useTrios=0;
 		ignoreAlleles=0;
 		*alleleFreqStr=*alleleNumberStr=*alleleCountStr='\0';
 	} 
-int unknownIfUntyped,unknownIfNoPass,altIsCommon,sc,ec,skipIfNoPass,useConsequenceWeights,useEnsembl,onlyUseSNPs,nExc,doRecessiveTest,addChrInVCF[MAXVCFFILES],useHaplotypes,count_hom_as_het,useTrios,ignoreAlleles;
+int unknownIfUntyped,unknownIfNoPass,altIsCommon,sc,ec,skipIfNoPass,useConsequenceWeights,useEnsembl,onlyUseSNPs,nExc,doRecessiveTest,addChrInVCF[MAXVCFFILES],useHaplotypes,count_hom_as_het,useTrios,ignoreAlleles,useProbs;
 int *phenotypes;
 long sp,ep;
 float GQThreshold,proportionCalledToPass;
@@ -138,6 +140,7 @@ public:
 	masterLocus(int nLF);
 	~masterLocus();
 	locusSNP isSNP() { return SNP; }
+	int outputProbs(probTriple *prob,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec);
 	int outputAlleles(allelePair *all,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec);
 	int outputCalls(strEntry *call,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec);
 	int outputVcfGenotypes(FILE *fo,FILE *f,int whichFile,int nSubs,analysisSpecs const &spec);
@@ -173,6 +176,7 @@ protected:
 	virtual void clear();
 	locusSNP isSNP();
 	virtual int outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec)=0;
+	virtual int outputProbs(probTriple *prob,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec)=0;
 public:
 	virtual int outputCalls(strEntry *call, FILE *f, FILEPOSITION filePos,int nSubs, int *alleleMap, analysisSpecs const &spec) { return 0; }
 	virtual int read(FILE *fp);
@@ -244,7 +248,9 @@ public:
 	int print(FILE* fp,analysisSpecs const &spec);
 	int printFeatures(FILE* fp,analysisSpecs const &spec,int showFreq=-1);
 	int outputCurrentAlleles(allelePair *all,analysisSpecs &spec);
+	int outputCurrentProbs(probTriple *prob,analysisSpecs &spec);
 	int outputAlleles(allelePair **all,analysisSpecs &spec);
+	int outputProbs(probTriple **all,analysisSpecs &spec);
 	int outputCalls(strEntry **call,analysisSpecs &spec);
 	int outputSubNames(strEntry *subName,analysisSpecs &spec);
 	int outputAffectionStatus(int *cc,analysisSpecs &spec);
@@ -257,6 +263,8 @@ public:
 	int getQuickConsequences(refseqGeneInfo &r,analysisSpecs const &spec,int redo=0);
 	int writeScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
 	int writeScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
+	int writepScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
+	int writepScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
 	int writeVars(char *fn,int *useFreqs,analysisSpecs &spec);
 	int writeGenos(char *fn,int *useFreqs,analysisSpecs &spec);
 	int writeGenoCounts(FILE *fo[2],char *geneName,long *varNum,analysisSpecs &spec,allelePair **a);

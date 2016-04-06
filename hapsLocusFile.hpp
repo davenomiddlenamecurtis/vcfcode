@@ -6,8 +6,9 @@
 class hapsLocalLocus : localLocus {
 	char rsName[100];
 public:
-	virtual int outputAlleles(allelePair *all,FILE *f,long filePos,int nSubs,int *alleleMap,analysisSpecs const &spec);
-	virtual int input(FILE *f, long *locusPosInFile, analysisSpecs const &spec);
+	virtual int outputProbs(probTriple *all, FILE *f, FILEPOSITION filePos, int nSubs, int *alleleMap, analysisSpecs const &spec) { return 0; } // not implemented, though could be
+	virtual int outputAlleles(allelePair *all,FILE *f,FILEPOSITION filePos,int nSubs,int *alleleMap,analysisSpecs const &spec);
+	virtual int input(FILE *f, FILEPOSITION *locusPosInFile, analysisSpecs const &spec);
 	virtual void clear() { rsName[0] = '\0'; }
 	virtual int read(FILE *fp);
 	virtual int write(FILE *fp);

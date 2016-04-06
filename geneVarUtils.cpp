@@ -1,4 +1,6 @@
 #include "geneVarUtils.hpp"
+#include <ctype.h>
+#include <assert.h>
 
 #define MAXSUB 10000
 
@@ -9,11 +11,11 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 {
 	FILE *fp[MAXDEPTH],*ef;
 	int argNum,i,s,usePhenotypes,f,depth;
-	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200];
+	char arg[2000],line[2000],addChrStr[MAXVCFFILES+1],phenotypeFileName[200],samplesFileName[200];
 	depth=-1;
 	argNum=1;
 	FILE *phenotypeFile;
-	*phenotypeFileName='\0';
+	*phenotypeFileName=*samplesFileName='\0';
 	for (i=0;i<MAXVCFFILES;++i)
 		spec.addChrInVCF[i]=0;
 	if (spec.phenotypes!=NULL)
@@ -30,6 +32,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	writeScoreFile=0;
 	*addChrStr='\0';
 	spec.useTrios=0;
+	spec.useProbs=0;
 	spec.useEnsembl=0;
 	spec.consequenceThreshold=NULL_CONSEQUENCE;
 	spec.useConsequenceWeights=0;
@@ -49,6 +52,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	spec.nExc=0;
 	dontExtractGene=0;
 	keepTempFiles=0;
+	doNotRun=0;
 	for (i = 0; i < 2; ++i)
 	{
 		useFreqs[i] = 0; // default
@@ -66,7 +70,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		{
 			if (++depth >= MAXDEPTH)
 			{
-				dcerror(1, "Attempting to recurse to deeply into arg-files with this one: %s\n", arg);
+				dcerror(1, "Attempting to recurse too deeply into arg-files with this one: %s\n", arg);
 				return 0;
 			}
 			else
@@ -82,6 +86,10 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		else if (FILLARG("--phenotype-file"))
 		{
 			strcpy(phenotypeFileName,arg);
+		}
+		else if (FILLARG("--samples-file"))
+		{
+			strcpy(samplesFileName,arg);
 		}
 		else if (FILLARG("--trio-file"))
 		{
@@ -159,10 +167,14 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 			spec.ignoreAlleles=atoi(arg);
 		else if (FILLARG("--use-haplotypes"))
 			spec.useHaplotypes=atoi(arg);
+		else if (FILLARG("--use-probs"))
+			spec.useProbs=atoi(arg);
 		else if (FILLARG("--dont-extract-gene"))
 			dontExtractGene=atoi(arg);
 		else if (FILLARG("--keep-temp-files"))
 			keepTempFiles=atoi(arg);
+		else if (FILLARG("--do-not-run"))
+			doNotRun=atoi(arg);
 		else if (FILLARG("--reference-path"))
 			strcpy(referencePath, arg);
 		else if (FILLARG("--sequence-path"))
@@ -214,17 +226,41 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 		}
 		;
 	}
-	if (phenotypeFileName[0])
+	if (phenotypeFileName[0] || samplesFileName[0])
 	{
 		spec.phenotypes = (int*)malloc(sizeof(int)*MAXSUB);
-		phenotypeFile = fopen(phenotypeFileName, "r");
-		if (phenotypeFile == NULL)
-			dcerror(1, "Could not open phenotype file: %s\n", phenotypeFileName);
-		nCc[0] = 0;
-		for (s = 0; fgets(line, 1999, phenotypeFile) && sscanf(line, "%d", &spec.phenotypes[s]) == 1; ++s)
-			;
+		if (phenotypeFileName[0])
+		{
+		assert((phenotypeFile = fopen(phenotypeFileName, "r"))!=0);
+			if (phenotypeFile == NULL)
+				dcerror(1, "Could not open phenotype file: %s\n", phenotypeFileName);
+			nCc[0] = 0;
+			for (s = 0; fgets(line, 1999, phenotypeFile) && sscanf(line, "%d", &spec.phenotypes[s]) == 1; ++s)
+				;
+		}
+		else
+		{
+			int col,c;
+			char *ptr;
+			assert((phenotypeFile = fopen(samplesFileName, "r"))!=0);
+			fgets(line, 1999, phenotypeFile);
+			for (col = 0, ptr = line; toupper(ptr[0]) != 'P'&&toupper(ptr[0]) != 'H'; ++col)
+			{
+				while (!isspace(*ptr)) ++ptr;
+				while (isspace(*ptr)) ++ptr;
+			}
+			fgets(line, 1999, phenotypeFile); //junk
+			for (s=0;fgets(line, 1999, phenotypeFile) && !isspace(line[0]);++s) // breaks if somebody wants to start their sample file with spaces
+			{
+				for (c = 0,ptr=line; c < col; ++c)
+				{
+				while (!isspace(*ptr)) ++ptr;
+				while (isspace(*ptr)) ++ptr;
+				}
+				spec.phenotypes[s]=*ptr-'0';
+			}
+		}
 		fclose(phenotypeFile);
-		;
 	}
 	int len;
 	if (*addChrStr != '\0')

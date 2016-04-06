@@ -109,20 +109,31 @@ int main(int argc,char *argv[])
 	if (extractedOK)
 	{
 		printf("Writing scoreassoc files...\n");
-		vf.writeScoreAssocFiles(fn, gp.wf, gp.wFunc, gp.useFreqs, gp.nSubs, 1, gp.writeComments, spec);
-
-		sprintf(line, "scoreassoc %s.par %s.dat %s.sao", fn, fn, fn);
-		if (gp.writeScoreFile == 1)
-			sprintf(strchr(line, '\0'), " %s.sco", fn);
+		vf.writepScoreAssocFiles(fn, gp.wf, gp.wFunc, gp.useFreqs, gp.nSubs, 1, gp.writeComments, gp.writeScoreFile, spec);
+#ifndef MSDOS
+		sprintf(line, "bash %s.sh\n",fn);
+#else
+		sprintf(line, "%s.bat\n",fn);
+#endif
+		if (!gp.doNotRun)
+		{
 		printf("Running command: %s\n", line);
 		system(line);
+		}
+		else
+			printf("Files for %s analysis written OK, to run analysis enter:\n%s\n\n",fn,line);
 	}
 	else
 	{
-		sprintf(fn2,"%s.sao",fn);
-		fp=fopen(fn2,"w");
-		fprintf(fp,"Failed to extract variants for this gene\n");
-		fclose(fp);
+		if (!gp.doNotRun)
+		{
+			sprintf(fn2, "%s.sao", fn);
+			fp = fopen(fn2, "w");
+			fprintf(fp, "Failed to extract variants for this gene\n");
+			fclose(fp);
+		}
+		else 
+			printf("Failed to extract variants for %s\n",fn);
 	}
 	if (!gp.keepTempFiles)
 	{

@@ -361,14 +361,14 @@ int refseqTranscript::getCodingEffect(faSequenceFile &f,int pos,char *a0,char *a
 	codon[3]='\0';
 	if (toupper(codon[framePos])!=all0[0])
 	{
-		dcerror(1,"base %d of codon %s does not match reference allele %c at position %d",
+		dcerror(1,"base %d of codon %s does not match reference allele %c at position %d - ",
 			framePos,codon,all0[0],pos);
 		if (toupper(codon[framePos])!=all1[0])
-			dcerror(1,"it does not match alt allele %c either",all1[0]);
+			dcerror(1,"it does not match alt allele %c either\n",all1[0]);
 		else
 		{
 			char a;
-			dcerror(0,"Will swap and use alt allele %c as reference",all1[0]);
+			dcerror(0,"Will swap and use alt allele %c as reference\n",all1[0]);
 			a=all0[0]; all0[0]=all1[0]; all1[0]=a;
 		}
 	}

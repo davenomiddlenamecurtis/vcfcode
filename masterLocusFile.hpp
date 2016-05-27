@@ -261,10 +261,10 @@ public:
 	int outputSAInfo(int *useLocus,float *locusWeight,analysisSpecs const &spec);
 	int getEnsemblConsequences(analysisSpecs const &spec);
 	int getQuickConsequences(refseqGeneInfo &r,analysisSpecs const &spec,int redo=0);
-	int writeScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
-	int writeScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
-	int writepScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
-	int writepScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
+	int writeOldScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
+	int writeOldScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,analysisSpecs &spec);
+	int writeScoreAssocFiles(char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
+	int writeScoreAssocFiles(masterLocusFile &subFile,char *root,float wf,int wFunc,int *useFreqs,int *suppliedNSubs,int writeNames,int writeComments,int writeScorefile,analysisSpecs &spec);
 	int writeVars(char *fn,int *useFreqs,analysisSpecs &spec);
 	int writeGenos(char *fn,int *useFreqs,analysisSpecs &spec);
 	int writeGenoCounts(FILE *fo[2],char *geneName,long *varNum,analysisSpecs &spec,allelePair **a);

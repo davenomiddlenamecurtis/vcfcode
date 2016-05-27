@@ -463,14 +463,14 @@ return locusCount;
 int useLocus[MAXLOCIINSCOREASSOCFILE];
 float locusWeight[MAXLOCIINSCOREASSOCFILE];
 
-int masterLocusFile::writeScoreAssocFiles(char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, analysisSpecs &spec)
+int masterLocusFile::writeOldScoreAssocFiles(char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, analysisSpecs &spec)
 {
-	return writeScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,spec);
+	return writeOldScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,spec);
 }
 
-int masterLocusFile::writepScoreAssocFiles(char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScoreFile, analysisSpecs &spec)
+int masterLocusFile::writeScoreAssocFiles(char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScoreFile, analysisSpecs &spec)
 {
-	return writepScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,writeScoreFile, spec);
+	return writeScoreAssocFiles(*this,root,wf,wFunc,useFreqs,suppliedNSubs,writeNames,writeComments,writeScoreFile, spec);
 }
 
 int masterLocusFile::loadFirst(analysisSpecs &spec)
@@ -498,7 +498,7 @@ int masterLocusFile::loadNext(analysisSpecs &spec)
 		load(tempRecord, currentRecPos);
 }
 
-int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, analysisSpecs &spec)
+int masterLocusFile::writeOldScoreAssocFiles(masterLocusFile &subFile,char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, analysisSpecs &spec)
 // allow information about subjects to be provided by a different masterLocusFile 
 // however we are assuming both files refer to identical set of subjects
 {
@@ -516,7 +516,7 @@ int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, f
 			nSubs[i]=subFile.nSubs[i];
 	else
 	{
-		dcerror(99,"Incompatible numbers of subjects in subFile in masterLocusFile::writeScoreAssocFiles()");
+		dcerror(99,"Incompatible numbers of subjects in subFile in masterLocusFile::writeOldScoreAssocFiles()");
 		return 0;
 	}
 	openLocusFiles();
@@ -669,7 +669,7 @@ int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, f
 	return 1;
 }
 
-int masterLocusFile::writepScoreAssocFiles(masterLocusFile &subFile,char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScorefile,analysisSpecs &spec)
+int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, float wf, int wFunc, int *useFreqs, int *suppliedNSubs, int writeNames, int writeComments, int writeScorefile,analysisSpecs &spec)
 // allow information about subjects to be provided by a different masterLocusFile 
 // however we are assuming both files refer to identical set of subjects
 {
@@ -688,7 +688,7 @@ int masterLocusFile::writepScoreAssocFiles(masterLocusFile &subFile,char *root, 
 			nSubs[i]=subFile.nSubs[i];
 	else
 	{
-		dcerror(99,"Incompatible numbers of subjects in subFile in masterLocusFile::writeScoreAssocFiles()");
+		dcerror(99,"Incompatible numbers of subjects in subFile in masterLocusFile::writeOldScoreAssocFiles()");
 		return 0;
 	}
 	openLocusFiles();

@@ -109,7 +109,7 @@ int main(int argc,char *argv[])
 	if (extractedOK)
 	{
 		printf("Writing scoreassoc files...\n");
-		vf.writepScoreAssocFiles(fn, gp.wf, gp.wFunc, gp.useFreqs, gp.nSubs, 1, gp.writeComments, gp.writeScoreFile, spec);
+		vf.writeScoreAssocFiles(fn, gp.wf, gp.wFunc, gp.useFreqs, gp.nSubs, 1, gp.writeComments, gp.writeScoreFile, spec);
 #ifndef MSDOS
 		sprintf(line, "bash %s.sh\n",fn);
 #else

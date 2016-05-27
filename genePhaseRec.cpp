@@ -277,7 +277,7 @@ hereOK();
 		
 	spec.useHaplotypes=1;
 hereOK();
-	hapsf.writeScoreAssocFiles(vf,fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+	hapsf.writeOldScoreAssocFiles(vf,fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 hereOK();
 
 	sprintf(line,"scoreassoc %s.par %s.dat %s.sao",fn,fn,fn);

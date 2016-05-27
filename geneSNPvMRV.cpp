@@ -86,8 +86,8 @@ showLD gSM.ANK3.MRVs.par gSM.ANK3.MRVs.dat gSM.ANK3.SNPs.par gSM.ANK3.SNPs.dat A
 			vf.readLocusFileEntries(fn,specMRVs,1);
 		}
 	vf.getQuickConsequences(r,specMRVs);
-	sprintf(fn,"%s.MRVs",geneName);
-	vf.writeScoreAssocFiles(fn,gpMRVs.wf,gpMRVs.wFunc,gpMRVs.useFreqs,gpMRVs.nSubs,1,gpMRVs.writeComments,specMRVs);
+	sprintf(fn,"gva.%s.MRVs",geneName);
+	vf.writeOldScoreAssocFiles(fn,gpMRVs.wf,gpMRVs.wFunc,gpMRVs.useFreqs,gpMRVs.nSubs,1,gpMRVs.writeComments,specMRVs);
 
 	fgets(line,999,fp);
 	sscanf(line,"%s",fn);
@@ -147,8 +147,8 @@ showLD gSM.ANK3.MRVs.par gSM.ANK3.MRVs.dat gSM.ANK3.SNPs.par gSM.ANK3.SNPs.dat A
 	}
 
 	vfSNPs.getQuickConsequences(r,specSNPs);
-	sprintf(fn,"%s.SNPs",geneName);
-	vfSNPs.writeScoreAssocFiles(fn,gpSNPs.wf,gpSNPs.wFunc,gpSNPs.useFreqs,gpSNPs.nSubs,1,gpSNPs.writeComments,specSNPs);
+	sprintf(fn,"gva.%s.SNPs",geneName);
+	vfSNPs.writeOldScoreAssocFiles(fn,gpSNPs.wf,gpSNPs.wFunc,gpSNPs.useFreqs,gpSNPs.nSubs,1,gpSNPs.writeComments,specSNPs);
 
 	sprintf(line,"showLD gva.%s.MRVs.par gva.%s.MRVs.dat gva.%s.SNPs.par gva.%s.SNPs.dat %s %d %d 1 >exclusions.txt",
 		geneName,geneName,geneName,geneName,ofn,nMRV,nTrial);
@@ -219,7 +219,7 @@ int main(int argc,char *argv[])
 		}
 	vf.getQuickConsequences(r,specMRVs);
 	sprintf(fn,"%s.MRVs",geneName);
-	vf.writeScoreAssocFiles(fn,gpMRVs.wf,gpMRVs.wFunc,gpMRVs.useFreqs,gpMRVs.nSubs,1,gpMRVs.writeComments,specMRVs);
+	vf.writeOldScoreAssocFiles(fn,gpMRVs.wf,gpMRVs.wFunc,gpMRVs.useFreqs,gpMRVs.nSubs,1,gpMRVs.writeComments,specMRVs);
 
 	fgets(line,999,fp);
 	sscanf(line,"%s",fn);
@@ -279,7 +279,7 @@ int main(int argc,char *argv[])
 
 	vfSNPs.getQuickConsequences(r,specSNPs);
 	sprintf(fn,"%s.SNPs",geneName);
-	vfSNPs.writeScoreAssocFiles(fn,gpSNPs.wf,gpSNPs.wFunc,gpSNPs.useFreqs,gpSNPs.nSubs,1,gpSNPs.writeComments,specSNPs);
+	vfSNPs.writeOldScoreAssocFiles(fn,gpSNPs.wf,gpSNPs.wFunc,gpSNPs.useFreqs,gpSNPs.nSubs,1,gpSNPs.writeComments,specSNPs);
 
 	sprintf(line,"showLD gva.%s.MRVs.par gva.%s.MRVs.dat gva.%s.SNPs.par gva.%s.SNPs.dat %s %d %d 1 >exclusions.txt",
 		geneName,geneName,geneName,geneName,ofn,nMRV,nTrial);

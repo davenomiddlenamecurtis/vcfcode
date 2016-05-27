@@ -49,7 +49,7 @@ int main(int argc,char *argv[])
 		vf.readLocusFileEntries(fn, spec, cc);
 	}
 	sprintf(fn,"gva.%s","SNPs");
-	vf.writeScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+	vf.writeOldScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 
 	sprintf(line,"scoreassoc gva.SNPs.par gva.SNPs.dat %s",argv[3]);
 	if (gp.writeScoreFile==1)

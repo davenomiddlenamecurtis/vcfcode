@@ -89,7 +89,7 @@ int main(int argc,char *argv[])
 	else
 		sprintf(fn,"gva.%s",groupName);
 
-	vf.writeScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+	vf.writeOldScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 
 	sprintf(line,"scoreassoc %s.par %s.dat %s.sao",fn,fn,fn);
 	if (gp.writeScoreFile==1)

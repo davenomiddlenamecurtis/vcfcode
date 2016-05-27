@@ -126,7 +126,7 @@ int main(int argc,char *argv[])
 		sprintf(fn,"gva.%s.ucw",geneName);
 	else
 		sprintf(fn,"gva.%s",geneName);
-		vf.writeScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+		vf.writeOldScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 		vf.closeLocusFiles();
 		vf.closeFiles();
 		sprintf(line,"scoreassoc %s.par %s.dat %s.sao",fn,fn,fn);

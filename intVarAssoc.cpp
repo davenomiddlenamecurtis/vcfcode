@@ -60,7 +60,7 @@ int main(int argc,char *argv[])
 
 	sprintf(fn,"gva.%s",testName);
 
-	vf.writeScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+	vf.writeOldScoreAssocFiles(fn,gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 
 	sprintf(line,"scoreassoc %s.par %s.dat %s.sao",fn,fn,fn);
 	if (gp.writeScoreFile==1)

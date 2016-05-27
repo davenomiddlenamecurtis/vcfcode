@@ -122,7 +122,7 @@ int main(int argc,char *argv[])
 		unlink("gva.all.par");
 		unlink("gva.all.dat");
 		unlink("gva.all.sao");
-		vf.writeScoreAssocFiles("gva.all",gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
+		vf.writeOldScoreAssocFiles("gva.all",gp.wf,gp.wFunc,gp.useFreqs,gp.nSubs,1,gp.writeComments,spec);
 		vf.closeLocusFiles();
 		vf.closeFiles();
 		system("scoreassoc gva.all.par gva.all.dat gva.all.sao");

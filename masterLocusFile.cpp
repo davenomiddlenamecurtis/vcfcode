@@ -733,7 +733,7 @@ int masterLocusFile::writeScoreAssocFiles(masterLocusFile &subFile,char *root, f
 		fprintf(fp,"\n");
 	}
 	fclose(fp);
-	sprintf(commandString,"pscoreassoc %s %s --numloci %d",spec.useProbs?"--gendatafile":"--gcdatafile",fn,lc);
+	sprintf(commandString,"scoreassoc %s %s --numloci %d",spec.useProbs?"--gendatafile":"--gcdatafile",fn,lc);
 	outputSAInfo(useLocus,locusWeight,spec);
 	sprintf(fn,"%s.lf.par",root);
 	fp=fopen(fn,"w");

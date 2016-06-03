@@ -16,6 +16,7 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 	argNum=1;
 	FILE *phenotypeFile;
 	*phenotypeFileName=*samplesFileName='\0';
+	geneListFn[0]=baitFn[0]=ccFn[2][MAXVCFPERCC][0]=referencePath[0]=geneName[0]=sequencePath[0]=posName[0]=intervalListFn[0]=testName[0]='\0';
 	for (i=0;i<MAXVCFFILES;++i)
 		spec.addChrInVCF[i]=0;
 	if (spec.phenotypes!=NULL)
@@ -179,6 +180,10 @@ int gvaParams::readParms(int argc,char *argv[],analysisSpecs &spec)
 			strcpy(referencePath, arg);
 		else if (FILLARG("--sequence-path"))
 			strcpy(sequencePath, arg);
+		else if (FILLARG("--test-name"))
+			strcpy(testName, arg);
+		else if (FILLARG("--interval-list-file"))
+			strcpy(intervalListFn, arg);
 		else if (FILLARG("--GQ-threshold"))
 			spec.GQThreshold=atof(arg);
 		else if (FILLARG("--gene"))

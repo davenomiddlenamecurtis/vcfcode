@@ -10,7 +10,7 @@ OURFLAGS = $(CFLAGS)
 HEADERS = btree.h consequenceType.hpp dcerror.hpp dcindex.hpp geneVarUtils.hpp getGene.hpp getSequence.hpp intervalList.h masterLocusFile.hpp vcfLocusFile.hpp hapsLocusFile.hpp
 
 ifdef INOBJ
-all: groupGetGenotypes genePhaseRec geneTestRec geneVarAssoc groupVarAssoc geneVarAssocAll geneVarAssocSome showAltSubs SNPVarAssoc
+all: showAltSubs groupGetGenotypes genePhaseRec geneTestRec groupVarAssoc geneVarAssocAll geneVarAssocSome SNPVarAssoc
 else
 all:
 	if [ ! -e ../obj ] ; then mkdir ../obj ; fi ; \
